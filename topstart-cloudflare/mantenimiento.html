@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Louis | Top Star</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: white; padding: 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 10px; max-width: 800px; margin: auto; }
+        input, select { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #334155; padding: 10px; text-align: left; }
+        .btn-save { background: #22c55e; color: white; padding: 15px; width: 100%; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Panel de Inventario - Neon DB</h2>
+        <label>Tasa COP:</label>
+        <input type="number" id="tasa" value="4050">
+        <hr>
+        <h3>Agregar Producto</h3>
+        <input type="text" id="es" placeholder="Nombre (Español)">
+        <input type="text" id="en" placeholder="Name (English)">
+        <input type="number" id="price" placeholder="Precio USD" step="0.01">
+        <select id="cat">
+            <option value="Víveres">Víveres</option>
+            <option value="Limpieza">Limpieza</option>
+            <option value="Bebidas">Bebidas</option>
+			<option value="Licores">Licores</option>
+			<option value="Carnes">Carnes</option>
+			<option value="Charcuteria">Charcuteria</option>
+			<option value="Ferreteria">Ferreteria</option>
+			<option value="Varios">Varios</option>
+        </select>
+        <button onclick="agregar()">Añadir a lista</button>
+
+        <table id="tabla">
+            <thead><tr><th>Cat</th><th>Producto</th><th>Precio $</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+        </table>
+
+        <button class="btn-save" onclick="guardar()">🚀 PUBLICAR CAMBIOS EN LA NUBE</button>
+    </div>
+
+    <script>
+        let productos = [];
+        
+        async function cargar() {
+            const res = await fetch('/api');
+            const data = await res.json();
+            productos = data.productos || [];
+            document.getElementById('tasa').value = data.tasa || 4050;
+            render();
+        }
+
+        function agregar() {
+            const p = {
+                id: Date.now(),
+                es: document.getElementById('es').value,
+                en: document.getElementById('en').value,
+                price: parseFloat(document.getElementById('price').value),
+                cat: document.getElementById('cat').value
+            };
+            if(p.es && p.price) { productos.push(p); render(); }
+        }
+
+        function render() {
+            const tbody = document.querySelector('#tabla tbody');
+            tbody.innerHTML = productos.map((p, i) => `
+                <tr>
+                    <td>${p.cat}</td>
+                    <td>${p.es}</td>
+                    <td><input type="number" value="${p.price}" onchange="productos[${i}].price=parseFloat(this.value)" style="width:60px"></td>
+                    <td><button onclick="productos.splice(${i},1); render()">X</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function guardar() {
+    // 1. Referencia al botón para dar feedback visual a Louis
+    const btn = document.querySelector('.btn-save');
+    btn.innerText = "Sincronizando con Neon...";
+
+    // 2. Empaquetamos la Tasa y los Productos en un solo objeto
+    const datosParaEnviar = { 
+        tasa: document.getElementById('tasa').value, 
+        productos: productos // 'productos' es el array que tiene Louis en pantalla
+    };
+
+    // 3. El "Mensajero": Enviamos el paquete a nuestra API
+    await fetch('/api', {
+        method: 'POST',
+        body: JSON.stringify(datosParaEnviar)
+    });
+
+    // 4. Finalización
+    btn.innerText = "🚀 PUBLICAR CAMBIOS EN LA NUBE";
+    alert("¡Base de datos Neon actualizada con éxito!");
+}
+
+        window.onload = cargar;
+    </script>
+</body>
+</html>

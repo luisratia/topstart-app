@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Top Star | Premium Trading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --gold: #e5c05b; 
+            --dark-bg: #121212; 
+            --card-bg: #1e1e1e; 
+            --text: #ffffff; 
+            --text-dim: #cfcfcf; 
+            --accent: #22c55e; 
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--dark-bg); 
+            color: var(--text); 
+            margin: 0; 
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased; 
+        }
+
+        /* Splash Screen - Fondo idéntico al body */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: var(--dark-bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; transition: opacity 0.6s ease;
+        }
+
+        /* Logo Circular Perfecto */
+        .circle-logo {
+            width: 220px; height: 220px;
+            border-radius: 50%; /* Fuerza la forma circular */
+            object-fit: cover;
+            border: 2px solid var(--gold); /* Un toque de elegancia */
+            box-shadow: 0 0 20px rgba(229, 192, 91, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .spinner { 
+            width: 30px; height: 30px; 
+            border: 3px solid rgba(229,192,91,0.1); 
+            border-top: 3px solid var(--gold); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+        }
+
+        /* Header y Estilos de UI */
+        header { padding: 40px 20px; text-align: center; background: linear-gradient(to bottom, #1a1a1a, var(--dark-bg)); }
+        .welcome-msg { font-size: 0.9rem; color: var(--text-dim); margin-top: 10px; font-style: italic; letter-spacing: 2px; }
+
+        .market-info { padding: 18px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-bottom: 1px solid #333; background: #1a1a1a; font-weight: 600; }
+        .tasa-val { color: var(--gold); background: rgba(229, 192, 91, 0.1); border: 1px solid var(--gold); padding: 4px 10px; border-radius: 6px; }
+
+        .search-container { padding: 20px; position: sticky; top: 0; background: var(--dark-bg); z-index: 10; }
+        #q { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #444; background: var(--card-bg); color: white; outline: none; box-sizing: border-box; }
+        #q:focus { border-color: var(--gold); }
+
+        .cat-scroll { display: flex; overflow-x: auto; gap: 12px; padding: 0 20px 25px; scrollbar-width: none; }
+        .cat-chip { background: var(--card-bg); color: var(--text-dim); padding: 10px 22px; border-radius: 25px; font-size: 0.85rem; border: 1px solid #444; white-space: nowrap; cursor: pointer; }
+        .cat-chip.active { background: var(--gold); color: #000; font-weight: 700; }
+
+        .product-grid { padding: 15px; display: grid; gap: 15px; }
+        .product-item { background: var(--card-bg); padding: 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .price { color: var(--gold); font-weight: 700; font-size: 1.2rem; }
+
+        .cart-controls { display: flex; align-items: center; gap: 15px; background: #000; padding: 8px 15px; border-radius: 10px; border: 1px solid #444; }
+        .btn-qty { background: none; border: none; color: var(--gold); font-size: 1.4rem; cursor: pointer; font-weight: bold; }
+
+        .action-bar { position: fixed; bottom: 0; width: 100%; background: #1a1a1a; border-top: 2px solid var(--gold); padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        
+        #checkout-form { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px); }
+        .form-content { background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--gold); max-width: 420px; margin: 40px auto; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <img src="img/topstar.png" class="circle-logo" alt="Top Star Logo">
+    <div class="spinner"></div>
+    <p style="color: var(--gold); margin-top: 15px; font-size: 0.7rem; letter-spacing: 3px;">TRADING COMPANY</p>
+</div>
+
+<div id="app-wrapper" style="display: none; opacity: 0; transition: opacity 0.8s ease;">
+    <header>
+        <img src="img/topstar.png" class="circle-logo" style="width: 140px; height: 140px;" alt="Logo">
+        <div class="welcome-msg">QUALITY WITHOUT COMPROMISE</div>
+    </header>
+
+    <div class="market-info">
+        <span>SISTEMA DE PAGOS</span>
+        <span>TASA: <span class="tasa-val" id="tasa-ui">---</span> COP</span>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="q" placeholder="¿Qué desea buscar hoy?" onkeyup="render()">
+    </div>
+
+    <div class="cat-scroll" id="cat-bar"></div>
+    <div id="main-content"></div>
+
+    <div style="padding: 30px 20px; background: #1a1a1a; border-top: 1px solid #333; margin-bottom: 130px; text-align: center;">
+        <h3 style="color: var(--gold); font-size: 0.8rem; letter-spacing: 2px;">MÉTODOS DE PAGO</h3>
+        <div style="display: flex; gap: 10px; margin: 20px 0;">
+            <div onclick="verPago('nequi')" style="flex:1; cursor:pointer; background:var(--card-bg); padding:15px; border-radius:12px; border: 1px solid #444;">📱 Nequi</div>
+            <div onclick="verPago('pm')" style="flex:1; cursor:pointer; background:var(--card-bg); padding:15px; border-radius:12px; border: 1px solid #444;">💸 P. Móvil</div>
+            <div onclick="verPago('trans')" style="flex:1; cursor:pointer; background:var(--card-bg); padding:15px; border-radius:12px; border: 1px solid #444;">🏦 Bancolombia</div>
+        </div>
+        <div id="datos-pago" style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--gold); display: none; text-align: left; position: relative;"></div>
+        <div style="margin-top: 30px; color: var(--text-dim); font-size: 0.75rem;">
+            📍 CRA 3B - EL CEMENTERIO - UREÑA
+        </div>
+    </div>
+</div>
+
+<div class="action-bar">
+    <div>
+        <div id="total-cop" style="font-size: 0.8rem; color: var(--text-dim);">0 COP</div>
+        <b id="total-usd" style="font-size: 1.4rem; color: var(--gold);">$0.00</b>
+    </div>
+    <button onclick="abrirFormulario()" style="background:var(--accent); color:white; border:none; padding: 15px 25px; border-radius: 10px; font-weight: 700; cursor: pointer;">PEDIR AHORA</button>
+</div>
+
+<div id="checkout-form">
+    <div class="form-content">
+        <h3 style="color:var(--gold); margin-top:0;">Finalizar Pedido</h3>
+        <input type="text" id="cliente-nombre" placeholder="Nombre completo">
+        <textarea id="cliente-dir" rows="3" style="width:100%; background:#2a2a2a; color:white; border:1px solid #444; border-radius:8px; padding:10px;" placeholder="Dirección de entrega"></textarea>
+        <select id="metodo-pago" style="width:100%; padding:12px; margin: 15px 0; background:#2a2a2a; color:white; border-radius:8px;">
+            <option value="Nequi">Nequi</option>
+            <option value="Pago Móvil">Pago Móvil</option>
+            <option value="Efectivo / Punto">Efectivo / Punto</option>
+        </select>
+        <button style="background:var(--accent); color:white; width: 100%; padding:15px; border:none; border-radius:10px; font-weight:700;" onclick="enviarWhatsApp()">CONFIRMAR EN WHATSAPP</button>
+        <button onclick="document.getElementById('checkout-form').style.display='none'" style="background:none; border:none; color:var(--text-dim); width:100%; margin-top:15px; cursor:pointer;">Cancelar</button>
+    </div>
+</div>
+
+<script>
+    let DATA = { tasa: 4050, productos: [] };
+    let CARRITO = {};
+    let catActiva = "Todas";
+
+    async function load() {
+        try {
+            const res = await fetch(`/api?t=${new Date().getTime()}`);
+            DATA = await res.json();
+            document.getElementById('tasa-ui').innerText = DATA.tasa;
+            render(); calc();
+            
+            // Transición suave
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.opacity = '0';
+                const app = document.getElementById('app-wrapper');
+                app.style.display = 'block';
+                setTimeout(() => { app.style.opacity = '1'; document.getElementById('splash-screen').style.display = 'none'; }, 100);
+            }, 1800);
+        } catch (e) { console.error("Error cargando datos"); }
+    }
+
+    function render() {
+        const q = document.getElementById('q').value.toLowerCase();
+        const container = document.getElementById('main-content');
+        const categories = ["Todas", ...new Set(DATA.productos.map(p => p.cat))];
+        document.getElementById('cat-bar').innerHTML = categories.map(c => `<div class="cat-chip ${catActiva === c ? 'active' : ''}" onclick="setCat('${c}')">${c}</div>`).join('');
+        
+        let html = "";
+        const catsToRender = catActiva === "Todas" ? categories.filter(c => c !== "Todas") : [catActiva];
+        
+        catsToRender.forEach(cat => {
+            const filtered = DATA.productos.filter(p => p.cat === cat && p.es.toLowerCase().includes(q));
+            if(filtered.length > 0) {
+                html += `<div style="padding: 15px 20px; color: var(--gold); font-size: 0.8rem; letter-spacing: 1px; font-weight:700;">${cat.toUpperCase()}</div><div class="product-grid">`;
+                filtered.forEach(p => {
+                    const qty = CARRITO[p.id] || 0;
+                    const displayQty = Number.isInteger(qty) ? qty : qty.toFixed(2).replace(/\.?0+$/, "");
+                    html += `<div class="product-item">
+                        <div style="flex:1">
+                            <div style="font-weight:600;">${p.es}</div>
+                            <div class="price">$${p.price.toFixed(2)}</div>
+                        </div>
+                        <div class="cart-controls">
+                            <button class="btn-qty" onclick="upd('${p.id}',-1)">−</button>
+                            <span>${displayQty}</span>
+                            <button class="btn-qty" onclick="upd('${p.id}',1)">+</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+        });
+        container.innerHTML = html;
+    }
+
+    function setCat(c) { catActiva = c; render(); }
+    function upd(id, n) {
+        const p = DATA.productos.find(x => x.id == id);
+        let step = (p.cat.toLowerCase().includes('carne') || p.cat.toLowerCase().includes('charcuteria')) ? 0.25 : 1;
+        CARRITO[id] = Math.max(0, (CARRITO[id] || 0) + (n * step));
+        render(); calc();
+    }
+    function calc() {
+        let usd = 0;
+        for(let id in CARRITO) { 
+            const p = DATA.productos.find(x => x.id == id); 
+            if(p) usd += p.price * CARRITO[id]; 
+        }
+        document.getElementById('total-usd').innerText = `$${usd.toFixed(2)}`;
+        document.getElementById('total-cop').innerText = `${(usd * DATA.tasa).toLocaleString('es-CO')} COP`;
+    }
+
+    function verPago(tipo) {
+        const box = document.getElementById('datos-pago');
+        box.style.display = 'block';
+        const info = {
+            nequi: `<b>📱 NEQUI:</b> 3138730916`,
+            pm: `<b>💸 PAGO MÓVIL:</b><br>Jhonder García | V-17816430<br>04264539092 | Banco Venezuela`,
+            trans: `<b>🏦 BANCOLOMBIA:</b><br>Jhonder García | Convenio: 82400004885<br>Ahorros: 1127062057`
+        };
+        box.innerHTML = info[tipo] + `<span onclick="this.parentElement.style.display='none'" style="position:absolute; top:10px; right:15px; cursor:pointer;">✕</span>`;
+    }
+
+    function abrirFormulario() {
+        if(parseFloat(document.getElementById('total-usd').innerText.replace('$','')) <= 0) return;
+        document.getElementById('checkout-form').style.display = 'block';
+    }
+
+    function enviarWhatsApp() {
+        const nom = document.getElementById('cliente-nombre').value;
+        const dir = document.getElementById('cliente-dir').value;
+        if(!nom || !dir) { alert("Complete los datos"); return; }
+        let msg = `🌟 *NUEVO PEDIDO*\n👤 *Cliente:* ${nom}\n📍 *Dirección:* ${dir}\n━━━━━━━━━━━━━━━━━━━━\n`;
+        for(let id in CARRITO) { 
+            const p = DATA.productos.find(x => x.id == id); 
+            if(CARRITO[id] > 0) msg += `• ${p.es} (x${CARRITO[id]})\n`; 
+        }
+        msg += `━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL:* ${document.getElementById('total-usd').innerText}`;
+        window.open(`https://wa.me/584264539092?text=${encodeURIComponent(msg)}`);
+    }
+
+    window.onload = load;
+</script>
+</body>
+</html>
