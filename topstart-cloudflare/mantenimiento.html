@@ -10,6 +10,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #334155; padding: 10px; text-align: left; }
         .btn-save { background: #22c55e; color: white; padding: 15px; width: 100%; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        .btn-add { background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -26,42 +27,61 @@
             <option value="Víveres">Víveres</option>
             <option value="Limpieza">Limpieza</option>
             <option value="Bebidas">Bebidas</option>
-			<option value="Licores">Licores</option>
-			<option value="Carnes">Carnes</option>
-			<option value="Charcuteria">Charcuteria</option>
-			<option value="Ferreteria">Ferreteria</option>
-			<option value="Varios">Varios</option>
+            <option value="Licores">Licores</option>
+            <option value="Carnes">Carnes</option>
+            <option value="Charcutería">Charcutería</option>
+            <option value="Ferretería">Ferretería</option>
+            <option value="Varios">Varios</option>
         </select>
-        <button onclick="agregar()">Añadir a lista</button>
+        <button class="btn-add" onclick="agregar()">Añadir a lista</button>
 
         <table id="tabla">
             <thead><tr><th>Cat</th><th>Producto</th><th>Precio $</th><th>Acción</th></tr></thead>
             <tbody></tbody>
         </table>
 
-        <button class="btn-save" onclick="guardar()">🚀 PUBLICAR CAMBIOS EN LA NUBE</button>
+        <button class="btn-save" id="btnPublicar" onclick="guardar()">🚀 PUBLICAR CAMBIOS EN LA NUBE</button>
     </div>
 
     <script>
         let productos = [];
         
         async function cargar() {
-            const res = await fetch('/api');
-            const data = await res.json();
-            productos = data.productos || [];
-            document.getElementById('tasa').value = data.tasa || 4050;
-            render();
+            try {
+                const res = await fetch('/api');
+                const data = await res.json();
+                productos = data.productos || [];
+                document.getElementById('tasa').value = data.tasa || 4050;
+                render();
+            } catch (err) {
+                console.error("Error cargando datos:", err);
+            }
         }
 
         function agregar() {
+            const inputEs = document.getElementById('es');
+            const inputEn = document.getElementById('en');
+            const inputPrice = document.getElementById('price');
+            const inputCat = document.getElementById('cat');
+
             const p = {
                 id: Date.now(),
-                es: document.getElementById('es').value,
-                en: document.getElementById('en').value,
-                price: parseFloat(document.getElementById('price').value),
-                cat: document.getElementById('cat').value
+                es: inputEs.value,
+                en: inputEn.value,
+                price: parseFloat(inputPrice.value),
+                cat: inputCat.value
             };
-            if(p.es && p.price) { productos.push(p); render(); }
+
+            if(p.es && p.price) { 
+                productos.push(p); 
+                // Limpiar campos para el siguiente producto
+                inputEs.value = '';
+                inputEn.value = '';
+                inputPrice.value = '';
+                render(); 
+            } else {
+                alert("Por favor llena al menos el nombre y el precio.");
+            }
         }
 
         function render() {
@@ -70,33 +90,44 @@
                 <tr>
                     <td>${p.cat}</td>
                     <td>${p.es}</td>
-                    <td><input type="number" value="${p.price}" onchange="productos[${i}].price=parseFloat(this.value)" style="width:60px"></td>
-                    <td><button onclick="productos.splice(${i},1); render()">X</button></td>
+                    <td><input type="number" value="${p.price}" onchange="productos[${i}].price=parseFloat(this.value)" style="width:70px"></td>
+                    <td><button onclick="productos.splice(${i},1); render()" style="background:#ef4444; color:white; border:none; border-radius:3px; cursor:pointer">Eliminar</button></td>
                 </tr>
             `).join('');
         }
 
         async function guardar() {
-    // 1. Referencia al botón para dar feedback visual a Louis
-    const btn = document.querySelector('.btn-save');
-    btn.innerText = "Sincronizando con Neon...";
+            const btn = document.getElementById('btnPublicar');
+            const originalText = btn.innerText;
+            
+            try {
+                btn.innerText = "Sincronizando con Neon...";
+                btn.disabled = true;
 
-    // 2. Empaquetamos la Tasa y los Productos en un solo objeto
-    const datosParaEnviar = { 
-        tasa: document.getElementById('tasa').value, 
-        productos: productos // 'productos' es el array que tiene Louis en pantalla
-    };
+                const datosParaEnviar = { 
+                    tasa: parseFloat(document.getElementById('tasa').value), 
+                    productos: productos 
+                };
 
-    // 3. El "Mensajero": Enviamos el paquete a nuestra API
-    await fetch('/api', {
-        method: 'POST',
-        body: JSON.stringify(datosParaEnviar)
-    });
+                const res = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }, // Indispensable para Cloudflare
+                    body: JSON.stringify(datosParaEnviar)
+                });
 
-    // 4. Finalización
-    btn.innerText = "🚀 PUBLICAR CAMBIOS EN LA NUBE";
-    alert("¡Base de datos Neon actualizada con éxito!");
-}
+                if (res.ok) {
+                    alert("¡Base de datos Neon actualizada con éxito!");
+                } else {
+                    throw new Error("Error en el servidor");
+                }
+            } catch (error) {
+                alert("Hubo un error al guardar los datos.");
+                console.error(error);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
 
         window.onload = cargar;
     </script>
